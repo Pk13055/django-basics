@@ -114,3 +114,134 @@ By default, INSTALLED_APPS contains the following apps, all of which come with D
 - Query all objects as : `Question.objects.all()`
 
 ## Django Admin
+
+- Django provides an admin panel to handle data addition etc. You can always implement the admin panel from the normal site routes itself as well.
+- Create a new superuser `python manage.py createsuperuser`
+- Basically to register any models, the specific classes should be added to the _admin.py_ of the given app (polls in our case). (`admin.site.register(Question)`)
+
+## Querying
+
+### Querying objects
+
+- Objects can be queryed using the `<Classname>.objects.all()` method. This returns a query set containing all the objects of the particular type, given a proper `__str__()` representation of the Class.
+- You can get all data **except** certain objects by using the `except()` function. Works with the same _field lookups_ as shown below.
+
+- The behavior of `filter()` for queries that span multi-value relationships is not implemented equivalently for `exclude()`. Instead, the conditions in a single `exclude()` call will not necessarily refer to the same item.
+
+	- For example, the following query would exclude blogs that contain both entries with “Lennon” in the headline and entries published in 2008:
+
+```python
+Blog.objects.exclude(
+    entry__headline__contains='Lennon',
+    entry__pub_date__year=2008,
+)
+```
+	- However, unlike the behavior when using filter(), this will not limit blogs based on entries that satisfy both conditions. In order to do that, i.e. to select all blogs that do not contain entries published with “Lennon” that were published in 2008, you need to make two queries:
+
+```python
+Blog.objects.exclude(
+    entry__in=Entry.objects.filter(
+        headline__contains='Lennon',
+        pub_date__year=2008,
+    ),
+)
+```
+
+- You can get induvidual classes by `<Classname>.objects.get(__**kwargs_)`. Some common arguments to the _get_ method are
+	- Getting the specific attribute:  
+		```Question.objects.get(pub_date__year = timezone.now().year)```
+		Here the year is a part of the *pub_date* attribute
+	- **__exact**: Adding this to the query will match for exact value. (this is the default lookup)
+	- **__contains**: This checks for substring or similar containment.
+	- **__icontains**: Similar to above but case-insenstive.
+	- **__startswith, endswith**: Checks for starting substring, ending substring (or similar).
+
+
+
+### Filters
+
+Everything inside a single filter() call is applied simultaneously to filter out items matching all those requirements. Successive filter() calls further restrict the set of objects, but for multi-valued relations, they apply to any object linked to the primary model, not necessarily those objects that were selected by an earlier filter() call.
+
+That may sound a bit confusing, so hopefully an example will clarify. To select all blogs that contain entries with both “Lennon” in the headline and that were published in 2008 (the same entry satisfying both conditions), we would write:
+
+```Blog.objects.filter(entry__headline__contains='Lennon', entry__pub_date__year=2008)```
+
+To select all blogs that contain an entry with “Lennon” in the headline as well as an entry that was published in 2008, we would write:
+
+```Blog.objects.filter(entry__headline__contains='Lennon').filter(entry__pub_date__year=2008)```
+
+### Queries 
+
+- **Complex lookups with Q objects**
+
+	Keyword argument queries – in `filter()`, etc. – are “AND”ed together. If you need to execute more complex queries (for example, queries with OR statements), you can use Q objects.
+
+	A Q object (django.db.models.Q) is an object used to encapsulate a collection of keyword arguments. These keyword arguments are specified as in “Field lookups” above.
+
+	For example, this Q object encapsulates a single LIKE query:
+	```python
+	from django.db.models import Q
+	Q(question__startswith='What')
+
+	Q objects can be combined using the & and | operators. When an operator is used on two Q objects, it yields a new Q object.
+	```
+	For example, this statement yields a single Q object that represents the “OR” of two "question__startswith" queries:
+	`Q(question__startswith='Who') | Q(question__startswith='What')`
+
+- **F expressions**
+	Django provides F expressions to allow such comparisons. Instances of F() act as a reference to a model field within a query. These references can then be used in query filters to compare the values of two different fields on the same model instance.
+
+	For example, to find a list of all blog entries that have had more comments than pingbacks, we construct an F() object to reference the pingback count, and use that F() object in the query:
+	
+	```python
+	>>> from django.db.models import F
+	>>> Entry.objects.filter(n_comments__gt=F('n_pingbacks'))
+	```
+	
+	Django supports the use of addition, subtraction, multiplication, division, modulo, and power arithmetic with F() objects, both with constants and with other F() objects. To find all the blog entries with more than twice as many comments as pingbacks, we modify the query:
+	
+	```python
+	>>> Entry.objects.filter(n_comments__gt=F('n_pingbacks') * 2)
+	```
+	
+	To find all the entries where the rating of the entry is less than the sum of the pingback count and comment count, we would issue the query:
+	
+	```python
+	>>> Entry.objects.filter(rating__lt=F('n_comments') + F('n_pingbacks'))
+	```
+	
+	You can also use the double underscore notation to span relationships in an F() object. An F() object with a double underscore will introduce any joins needed to access the related object. For example, to retrieve all the entries where the author’s name is the same as the blog name, we could issue the query:
+
+	```python
+	>>> Entry.objects.filter(authors__name=F('blog__name'))
+	```
+
+## Views 
+
+- Django uses the `jinja` templating engine, similar to the one used in _Flask_.
+- Add views to the `views.py` of your app:
+
+```python
+	from django.shortcuts import render
+	#OR
+	from django.http import HttpResponse
+	from django.template import loader
+	
+	def index(request, param1, param2):
+		on_the_page = param1
+		context = {
+			"on the page" : on_the_page,
+			"2" : param2
+		}
+		return HttpResponse(template.render(context, request))
+		#OR
+		return render(request, 'appname/filename', context)
+```
+
+- It becomes challenging to change URLs on projects with a lot of templates. However, since you defined the name argument in the url() functions in the polls.urls module, you can remove a reliance on specific URL paths defined in your url configurations by using the {% url %} template tag:
+	- `<li><a href="{% url 'index' question.id %}">{{ question.question_text }}</a></li>`
+
+- In real Django projects, there might be five, ten, twenty apps or more. How does Django differentiates the URL names between themm by adding namespaces to your URLconf. In the polls/urls.py file, go ahead and add an app_name to set the application namespace `app_name = 'polls'` and then modify the url in the html as 
+	- `<li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>`
+
+## Forms
