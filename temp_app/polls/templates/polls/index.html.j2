@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>{{ name }}</title>
+</head>
+<body>
+	{% for i in number %}
+	<h1>{{ number }}</h1>
+	{% endfor %}
+	<a href="{% url 'polls:form' %}">Go to form</a>
+	<h1>{{question.pk }}</h1>
+	<ul>
+	{% for prop in question %}
+		<li>{{ prop }}</li>
+	</ul>
+	{% endfor %}
+</body>
+</html>

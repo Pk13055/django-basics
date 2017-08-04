@@ -244,4 +244,34 @@ To select all blogs that contain an entry with “Lennon” in the headline as w
 - In real Django projects, there might be five, ten, twenty apps or more. How does Django differentiates the URL names between themm by adding namespaces to your URLconf. In the polls/urls.py file, go ahead and add an app_name to set the application namespace `app_name = 'polls'` and then modify the url in the html as 
 	- `<li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>`
 
+### Default Views
+
+- Django provides some default views with which to display data, reducing the amount of HTML one has to write.
+- We’re using two generic views here: ListView and DetailView. Respectively, those two views abstract the concepts of “display a list of objects” and “display a detail page for a particular type of object.”
+  -  Each generic view needs to know what model it will be acting upon. This is provided using the model attribute.
+  -  The DetailView generic view expects the primary key value captured from the URL to be called "pk", so we’ve changed question_id to pk for the generic views
+
+- For DetailView the question variable is provided automatically – since we’re using a Django model (Question), Django is able to determine an appropriate name for the context variable. However, for ListView, the automatically generated context variable is question_list. 
+- To override this we provide the context_object_name attribute, specifying that we want to use latest_question_list instead. As an alternative approach, you could change your templates to match the new default context variables – but it’s a lot easier to just tell Django to use the variable you want.
+- `  context_object_name = 'latest_question_list'` : This basically sets the variable that will be used in the template itself.
+
 ## Forms
+
+- Forms are almost implemented just as normal forms would be, difference being the _urls_ can be specified as told above to avoid any hard coding. 
+- Following example covers most of the form details and fields 
+```python
+<h1>{{ question.question_text }}</h1>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'polls:vote' question.id %}" method="post">
+{% csrf_token %}
+{% for choice in question.choice_set.all %}
+    <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
+    <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br />
+{% endfor %}
+<input type="submit" value="Vote" />
+</form>
+```
+
+
