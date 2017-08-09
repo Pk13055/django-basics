@@ -15,6 +15,44 @@
    * [wsgi.py](./temp_app/wsgi.py)
  * [README.md](./README.md)
 
+- Directory Structure is as follows:
+
+```bash
+.
+├── db.sqlite3
+├── manage.py
+├── polls
+│   ├── admin.py
+│   ├── apps.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 0001_initial.py
+│   │   ├── __init__.py
+│   ├── models.py
+│   ├── static
+│   │   └── polls
+│   ├── templates
+│   │   ├── 403.html
+│   │   ├── 404.html
+│   │   ├── 500.html
+│   │   ├── polls
+│   │   │   ├── form.html.j2
+│   │   │   └── index.html.j2
+│   │   └── touch
+│   ├── tests.py
+│   ├── urls.py
+│   └── views.py
+├── README.md
+└── temp_app
+    ├── __init__.py
+    ├── settings.py
+    ├── urls.py
+    └── wsgi.py
+
+15 directories, 72 files
+```
+
+
  - The uses of the various files:
 	- The outer mysite/ root directory is just a container for your project. Its name doesn’t matter to Django; you can rename it to anything you like.
 	- manage.py: A command-line utility that lets you interact with this Django project in various ways. You can read all the details about manage.py in django-admin and manage.py.
@@ -273,5 +311,74 @@ To select all blogs that contain an entry with “Lennon” in the headline as w
 <input type="submit" value="Vote" />
 </form>
 ```
+
+## Testing & Automated Tests
+
+- Tests are a way of ensuring that our app works properly. Tests have to be written once, afterwhich they can be execucted by the system automatically.
+- A conventional place for an application’s tests is in the application’s tests.py file; the testing system will automatically find tests in any file whose name begins with test.
+- This is an example of a testcase wherein the date of publication is in _30 days_ in the future, yet is marked as published recently. 
+```python
+class QuestionModelTests(TestCase):
+	
+	def test_published_recently_with_future_result(self):
+	"""
+		This test exporses the bug that questions created with
+		a future date are also marked as somthing published recently
+
+	"""
+
+	time = timezone.now() + datetime.timedelta(days = 30)
+	future_question = Question(pub_date = time)
+	self.assertIs(future_question.was_published_recently(), False)
+```
+- Now to run the tests we simply have to `python manage.py test <app name>`
+
+## Django Test Client
+
+- Django provides a test client to simulate a user interacting with the application.
+- `from django.test.utils import setup_test_environment`
+- In the terminal, 
+```python
+>>> setup_test_environment()
+```
+- After this, you have to create a client and test at client level, ie, with the rendered HTML
+```python 
+class QuestionIndexViewTests(TestCase):
+    def test_no_questions(self):
+        """
+        If no questions exist, an appropriate message is displayed.
+        """
+        response = self.client.get(reverse('polls:index'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No polls are available.")
+        self.assertQuerysetEqual(response.context['latest_question_list'], [])
+
+    def test_past_question(self):
+        """
+        ...
+```
+- It might seem that our tests are growing out of control. At this rate there will soon be more code in our tests than in our application, and the repetition is unaesthetic, compared to the elegant conciseness of the rest of our code.
+
+- It doesn’t matter. Let them grow. For the most part, you can write a test once and then forget about it. It will continue performing its useful function as you continue to develop your program.
+
+- Sometimes tests will need to be updated. Suppose that we amend our views so that only Questions with Choices are published. In that case, many of our existing tests will fail - telling us exactly which tests need to be amended to bring them up to date, so to that extent tests help look after themselves.
+
+- At worst, as you continue developing, you might find that you have some tests that are now redundant. Even that’s not a problem; in testing redundancy is a good thing.
+
+- As long as your tests are sensibly arranged, they won’t become unmanageable. Good rules-of-thumb include having:
+	-    a separate TestClass for each model or view
+	-    a separate test method for each set of conditions you want to test
+	-    test method names that describe their function
+
+
+## Serving Static Files
+
+```bash
+polls
+├── static
+   	└── polls
+```
+
+- Static files (_images, css, js, etc_) must be placed within the structure shown above. .
 
 

@@ -10,10 +10,10 @@
 	{% endfor %}
 	<a href="{% url 'polls:form' %}">Go to form</a>
 	<h1>{{question.pk }}</h1>
-	<ul>
-	{% for prop in question %}
-		<li>{{ prop }}</li>
-	</ul>
-	{% endfor %}
+	<pre>
+		<code>
+			{{ question }}
+		</code>
+	</pre>
 </body>
 </html>
