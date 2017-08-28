@@ -260,23 +260,23 @@ To select all blogs that contain an entry with “Lennon” in the headline as w
 - Add views to the `views.py` of your app:
 
 ```python
-	from django.shortcuts import render
+from django.shortcuts import render
+#OR
+from django.http import HttpResponse
+from django.template import loader
+
+def index(request, param1, param2):
+	on_the_page = param1
+	context = {
+		"on the page" : on_the_page,
+		"2" : param2
+	}
+	return HttpResponse(template.render(context, request))
 	#OR
-	from django.http import HttpResponse
-	from django.template import loader
-	
-	def index(request, param1, param2):
-		on_the_page = param1
-		context = {
-			"on the page" : on_the_page,
-			"2" : param2
-		}
-		return HttpResponse(template.render(context, request))
-		#OR
-		return render(request, 'appname/filename', context)
+	return render(request, 'appname/filename', context)
 ```
 
-- It becomes challenging to change URLs on projects with a lot of templates. However, since you defined the name argument in the url() functions in the polls.urls module, you can remove a reliance on specific URL paths defined in your url configurations by using the {% url %} template tag:
+- It becomes challenging to change URLs on projects with a lot of templates. However, since you defined the name argument in the url() functions in the polls.urls module, you can remove a reliance on specific URL paths defined in your url configurations by using the `{% url %}` template tag:
 	- `<li><a href="{% url 'index' question.id %}">{{ question.question_text }}</a></li>`
 
 - In real Django projects, there might be five, ten, twenty apps or more. How does Django differentiates the URL names between themm by adding namespaces to your URLconf. In the polls/urls.py file, go ahead and add an app_name to set the application namespace `app_name = 'polls'` and then modify the url in the html as 
